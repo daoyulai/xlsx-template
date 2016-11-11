@@ -1,10 +1,10 @@
 {
-  "name": "xlsx-template",
+  "name": "excel-template",
   "version": "0.0.5",
   "description": "Generate .xlsx (Excel) files from templates built in Excel",
   "main": "./lib/index",
   "author": {
-    "name": "Martin Aspeli"
+    "name": "John Ro"
   },
   "contributors": [
     {
@@ -13,19 +13,24 @@
     {
       "name": "Andrey Kurdyumov",
       "email": "kant2002@gmail.com"
+    },
+    {
+      "name": "John Ro",
+      "email": "johnro83@gmail.com"
     }
   ],
   "repository": {
     "type": "git",
-    "url": "http://github.com/kant2002/xlsx-template.git"
+    "url": "http://github.com/john-ro/xlsx-template.git"
   },
   "bugs": {
-    "url": "http://github.com/kant2002/xlsx-template/issues"
+    "url": "http://github.com/john-ro/xlsx-template/issues"
   },
+  "license": "MIT",
   "licenses": [
     {
       "type": "MIT",
-      "url": "http://github.com/kant2002/xlsx-template/raw/master/LICENSE"
+      "url": "http://github.com/john-ro/xlsx-template/raw/master/LICENSE"
     }
   ],
   "dependencies": {
