@@ -546,16 +546,176 @@ describe("CRUD operations", function() {
                 buster.expect(table3.find("./autoFilter").attrib.ref).toEqual("C14:D16"); // Grown and pushed down
 
                 // XXX: For debugging only
-                fs.writeFileSync('test.xlsx', newData, 'binary');
+                // fs.writeFileSync('test.xlsx', newData, 'binary');
 
                 done();
             });
 
         });
 
-    
+        it("can properly parse conditions", function(done) {
+            
+            fs.readFile(path.join(__dirname, 'templates', 'test-condition.xlsx'), function(err, data) {
+                buster.expect(err).toBeNull();
 
+                var t = new XlsxTemplate(data);
+                
+                t.substitute(1, {
+                    shouldShow: "This should show.",
+                    shouldNotShow: ""
+                });
 
+                
+                var newData = t.generate(),
+                    archive = new zip(newData, {base64: false, checkCRC32: true});
+
+                var sharedStrings = etree.parse(t.archive.file("xl/sharedStrings.xml").asText()).getroot(),
+                    sheet1        = etree.parse(t.archive.file("xl/worksheets/sheet1.xml").asText()).getroot();
+
+                buster.expect(
+                    sharedStrings.findall("./si")[
+                        parseInt(sheet1.find("./sheetData/row/c[@r='B4']/v").text, 10)
+                    ].find("t").text
+                ).toEqual("This should show.");
+
+                buster.expect(
+                    sharedStrings.findall("./si")[
+                        parseInt(sheet1.find("./sheetData/row/c[@r='B11']/v").text, 10)
+                    ].find("t").text
+                ).toEqual("Last line");
+
+                // XXX: For debugging only
+                // fs.writeFileSync('test.xlsx', newData, 'binary');
+
+                done();
+            });
+
+        });
+
+        it("renders tables depending on condition", function(done) {
+
+            fs.readFile(path.join(__dirname, 'templates', 'test-tables-condition.xlsx'), function(err, data) {
+                buster.expect(err).toBeNull();
+
+                var t = new XlsxTemplate(data);
+                
+                t.substitute("Tables", {
+                    ages: [{name: "John", age: 10}, {name: "Bob", age: 2}],
+                    scores: [{name: "John", score: 100}, {name: "Bob", score: 110}, {name: "Jim", score: 120}],
+                    coords: [],
+                    dates: [
+                        {name: "John", dates: [new Date("2013-01-01"), new Date("2013-01-02")]},
+                        {name: "Bob", dates: [new Date("2013-01-01"), new Date("2013-01-02"), new Date("2013-01-03")]},
+                        {name: "Jim", dates: []},
+                    ],
+                    shouldShow: true,
+                    shouldNotShow: false,
+                    nestedShouldShow: true
+                });
+
+                var newData = t.generate(),
+                    archive = new zip(newData, {base64: false, checkCRC32: true});
+
+                var sharedStrings = etree.parse(t.archive.file("xl/sharedStrings.xml").asText()).getroot(),
+                    sheet1        = etree.parse(t.archive.file("xl/worksheets/sheet1.xml").asText()).getroot();
+
+                // Marker above table hasn't moved
+                buster.expect(sheet1.find("./sheetData/row/c[@r='B4']/v").text).toEqual("101");
+
+                // Headers on row 6 haven't moved
+                buster.expect(
+                    sharedStrings.findall("./si")[
+                        parseInt(sheet1.find("./sheetData/row/c[@r='B6']/v").text, 10)
+                    ].find("t").text
+                ).toEqual("Name");
+                buster.expect(
+                    sharedStrings.findall("./si")[
+                        parseInt(sheet1.find("./sheetData/row/c[@r='C6']/v").text, 10)
+                    ].find("t").text
+                ).toEqual("Age");
+                buster.expect(
+                    sharedStrings.findall("./si")[
+                        parseInt(sheet1.find("./sheetData/row/c[@r='E6']/v").text, 10)
+                    ].find("t").text
+                ).toEqual("Name");
+                buster.expect(
+                    sharedStrings.findall("./si")[
+                        parseInt(sheet1.find("./sheetData/row/c[@r='F6']/v").text, 10)
+                    ].find("t").text
+                ).toEqual("Score");
+
+                // Rows 7 contains table values for the two tables, plus the original marker in G7
+                buster.expect(
+                    sharedStrings.findall("./si")[
+                        parseInt(sheet1.find("./sheetData/row/c[@r='B7']/v").text, 10)
+                    ].find("t").text
+                ).toEqual("John");
+                buster.expect(sheet1.find("./sheetData/row/c[@r='C7']/v").text).toEqual("10");
+                
+                buster.expect(
+                    sharedStrings.findall("./si")[
+                        parseInt(sheet1.find("./sheetData/row/c[@r='E7']/v").text, 10)
+                    ].find("t").text
+                ).toEqual("John");
+                buster.expect(sheet1.find("./sheetData/row/c[@r='F7']/v").text).toEqual("100");
+
+                buster.expect(sheet1.find("./sheetData/row/c[@r='G7']/v").text).toEqual("102");
+
+                // Row 8 contains table values, and no markers
+                buster.expect(
+                    sharedStrings.findall("./si")[
+                        parseInt(sheet1.find("./sheetData/row/c[@r='B8']/v").text, 10)
+                    ].find("t").text
+                ).toEqual("Bob");
+                buster.expect(sheet1.find("./sheetData/row/c[@r='C8']/v").text).toEqual("2");
+                
+                buster.expect(
+                    sharedStrings.findall("./si")[
+                        parseInt(sheet1.find("./sheetData/row/c[@r='E8']/v").text, 10)
+                    ].find("t").text
+                ).toEqual("Bob");
+                buster.expect(sheet1.find("./sheetData/row/c[@r='F8']/v").text).toEqual("110");
+
+                buster.expect(sheet1.find("./sheetData/row/c[@r='G8']")).toBeNull();
+
+                // Row 9 contains no values for the first table, and again no markers
+                buster.expect(sheet1.find("./sheetData/row/c[@r='B9']")).toBeNull();
+                buster.expect(sheet1.find("./sheetData/row/c[@r='C9']")).toBeNull();
+                
+                buster.expect(
+                    sharedStrings.findall("./si")[
+                        parseInt(sheet1.find("./sheetData/row/c[@r='E9']/v").text, 10)
+                    ].find("t").text
+                ).toEqual("Jim");
+                buster.expect(sheet1.find("./sheetData/row/c[@r='F9']/v").text).toEqual("120");
+
+                buster.expect(sheet1.find("./sheetData/row/c[@r='G8']")).toBeNull();
+
+                // Row 10 and 11 are blank
+                buster.expect(sheet1.find("./sheetData/row/c[@r='B10']/v")).toBeNull();
+                buster.expect(sheet1.find("./sheetData/row/c[@r='B11']/v")).toBeNull();
+
+                // Row 12 contains a single cell of text
+                buster.expect(
+                    sharedStrings.findall("./si")[
+                        parseInt(sheet1.find("./sheetData/row/c[@r='B12']/v").text, 10)
+                    ].find("t").text
+                ).toEqual("This should show");
+
+                // Row 13 contains last line
+                buster.expect(
+                    sharedStrings.findall("./si")[
+                        parseInt(sheet1.find("./sheetData/row/c[@r='B13']/v").text, 10)
+                    ].find("t").text
+                ).toEqual("Last line");
+
+                // XXX: For debugging only
+                // fs.writeFileSync('test.xlsx', newData, 'binary');
+
+                done();
+            });
+
+        });
     });
 
 });

@@ -35,6 +35,22 @@ might result in (depending on date formatting in the second cell):
 Here, `extractDate` may be a date and the second cell may be formatted as a
 number.
 
+### If Statements
+
+Truthy variables can be passed as placeholder values to determine if rows
+show or not:
+
+    | ${if:name}    |
+    | ${name}       |
+    | ${endif:name} |
+
+If the condition is tested to be false, the 3 rows above will not show at
+all. If it is tested to be true, the first and third rows will be removed,
+but the second row resolving `${name}` will remain.
+
+If statements should only show up under the first column (A). Nesting of if
+blocks are allowed.
+
 ### Columns
 
 You can use arrays as placeholder values to indicate that the placeholder cell
@@ -138,6 +154,20 @@ attach it to an email or do whatever you want with it.
   other such things.
 
 ## Changelog
+
+### Version 0.0.6
+
+New feature added:
+
+* If statements! Pass in boolean variables to show/hide sections of sheets.
+
+Bug fix:
+
+* Fix missing compression method.
+
+### Version 0.0.5
+
+* Forked from original [xlsx-template](https://github.com/kant2002/xlsx-template) library.
 
 ### Version 0.0.4
 
