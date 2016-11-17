@@ -155,6 +155,12 @@ attach it to an email or do whatever you want with it.
 
 ## Changelog
 
+### Version 0.0.7
+
+Bug fix:
+
+* Fix delete sheet feature when sheet number does not match id.
+
 ### Version 0.0.6
 
 New feature added:
