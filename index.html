@@ -1,0 +1,279 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Excel Template by john-ro</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-dark.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Excel Template</h1>
+        <p>A NodeJS module to generate Excel files in .xlsx format from a template created with Excel itself</p>
+        <p class="view"><a href="https://github.com/john-ro/xlsx-template">View the Project on GitHub <small>john-ro/xlsx-template</small></a></p>
+        <ul>
+          <li><a href="https://github.com/john-ro/xlsx-template/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/john-ro/xlsx-template/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/john-ro/xlsx-template">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="excel-xlsx-template" class="anchor" href="#excel-xlsx-template" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Excel (XLSX) Template</h1>
+
+<p><a href="http://travis-ci.org/john-ro/xlsx-template"><img src="https://api.travis-ci.org/john-ro/xlsx-template.png?branch=in-progress" alt="Build status"></a></p>
+
+<p>This module provides a means of generating "real" Excel reports (i.e. not CSV
+files) in NodeJS applications.</p>
+
+<p>The basic principle is this: You create a template in Excel. This can be
+formatted as you wish, contain formulae etc. In this file, you put placeholders
+using a specific syntax (see below). In code, you build a map of placeholders
+to values and then load the template, substitute the placeholders for the
+relevant values, and generate a new .xlsx file that you can then serve to the
+user.</p>
+
+<h2>
+<a id="placeholders" class="anchor" href="#placeholders" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Placeholders</h2>
+
+<p>Placeholders are inserted in cells in a spreadsheet. It does not matter how
+those cells are formatted, so e.g. it is OK to insert a placeholder (which is
+text content) into a cell formatted as a number or currecy or date, if you
+expect the placeholder to resolve to a number or currency or date.</p>
+
+<h3>
+<a id="scalars" class="anchor" href="#scalars" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Scalars</h3>
+
+<p>Simple placholders take the format <code>${name}</code>. Here, <code>name</code> is the name of a
+key in the placeholders map. The value of this placholder here should be a
+scalar, i.e. not an array or object. The placeholder may appear on its own in a
+cell, or as part of a text string. For example:</p>
+
+<pre><code>| Extracted on: | ${extractDate} |
+</code></pre>
+
+<p>might result in (depending on date formatting in the second cell):</p>
+
+<pre><code>| Extracted on: | Jun-01-2013 |
+</code></pre>
+
+<p>Here, <code>extractDate</code> may be a date and the second cell may be formatted as a
+number.</p>
+
+<h3>
+<a id="if-statements" class="anchor" href="#if-statements" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>If Statements</h3>
+
+<p>Truthy variables can be passed as placeholder values to determine if rows
+show or not:</p>
+
+<pre><code>| ${if:name}    |
+| ${name}       |
+| ${endif:name} |
+</code></pre>
+
+<p>If the condition is tested to be false, the 3 rows above will not show at
+all. If it is tested to be true, the first and third rows will be removed,
+but the second row resolving <code>${name}</code> will remain.</p>
+
+<p>If statements should only show up under the first column (A). Nesting of if
+blocks are allowed.</p>
+
+<h3>
+<a id="columns" class="anchor" href="#columns" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Columns</h3>
+
+<p>You can use arrays as placeholder values to indicate that the placeholder cell
+is to be replicated across columns. In this case, the placeholder cannot appear
+inside a text string - it must be the only thing in its cell. For example,
+if the placehodler value <code>dates</code> is an array of dates:</p>
+
+<pre><code>| ${dates} |
+</code></pre>
+
+<p>might result in:</p>
+
+<pre><code>| Jun-01-2013 | Jun-02-2013 | Jun-03-2013 |
+</code></pre>
+
+<h3>
+<a id="tables" class="anchor" href="#tables" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Tables</h3>
+
+<p>Finally, you can build tables made up of multiple rows. In this case, each
+placeholder should be prefixed by <code>table:</code> and contain both the name of the
+placeholder variable (a list of objects) and a key (in each object in the list).
+For example:</p>
+
+<pre><code>| Name                 | Age                 |
+| ${table:people.name} | ${table:people.age} |
+</code></pre>
+
+<p>If the replacement value under <code>people</code> is an array of objects, and each of
+those objects have keys <code>name</code> and <code>age</code>, you may end up with something like:</p>
+
+<pre><code>| Name        | Age |
+| John Smith  | 20  |
+| Bob Johnson | 22  |
+</code></pre>
+
+<p>If a particular value is an array, then it will be repeated across columns as
+above.</p>
+
+<h2>
+<a id="generating-reports" class="anchor" href="#generating-reports" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Generating reports</h2>
+
+<p>To make this magic happen, you need some code like this:</p>
+
+<pre><code>var XlsxTemplate = require('xlsx-template');
+
+// Load an XLSX file into memory
+fs.readFile(path.join(__dirname, 'templates', 'template1.xlsx'), function(err, data) {
+
+    // Create a template
+    var template = new XlsxTemplate(data);
+
+    // Replacements take place on first sheet
+    var sheetNumber = 1;
+
+    // Set up some placeholder values matching the placeholders in the template
+    var values = {
+            extractDate: new Date(),
+            dates: [ new Date("2013-06-01"), new Date("2013-06-02"), new Date("2013-06-03") ],
+            people: [
+                {name: "John Smith", age: 20},
+                {name: "Bob Johnson", age: 22}
+            ]
+        };
+
+    // Perform substitution
+    template.substitute(sheetNumber, values);
+
+    // Get binary data
+    var data = template.generate();
+
+    // ...
+
+});
+</code></pre>
+
+<p>At this stage, <code>data</code> is a string blob representing the compressed archive that
+is the <code>.xlsx</code> file (that's right, a <code>.xlsx</code> file is a zip file of XML files,
+if you didn't know). You can send this back to a client, store it to disk,
+attach it to an email or do whatever you want with it.</p>
+
+<h2>
+<a id="caveats" class="anchor" href="#caveats" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Caveats</h2>
+
+<ul>
+<li>The spreadsheet must be saved in <code>.xlsx</code> format. <code>.xls</code>, <code>.xlsb</code> or <code>.xlsm</code>
+won't work.</li>
+<li>Column (array) and table (array-of-objects) insertions cause rows and cells to
+be inserted or removed. When this happens, only a limited number of
+adjustments are made:
+
+<ul>
+<li>Merged cells and named cells/ranges to the right of cells where insertions
+or deletions are made are moved right or left, appropriately. This may
+not work well if cells are merged across rows, unless all rows have the
+same number of insertions.</li>
+<li>Merged cells, named tables or named cells/ranges below rows where further
+rows are inserted are moved down.
+Formulae are not adjusted.</li>
+</ul>
+</li>
+<li>As a corollary to this, it is not always easy to build formulae that refer
+to cells in a table (e.g. summing all rows) where the exact number of rows
+or columns is not known in advance. There are two strategies for dealing
+with this:
+
+<ul>
+<li>Put the table as the last (or only) thing on a particular sheet, and
+use a formula that includes a large number of rows or columns in the
+hope that the actual table will be smaller than this number.</li>
+<li>Use named tables. When a placeholder in a named table causes columns or
+rows to be added, the table definition (i.e. the cells included in the
+table) will be updated accordingly. You can then use things like
+<code>TableName[ColumnName]</code> in your formula to refer to all values in a given
+column in the table as a logical range.</li>
+</ul>
+</li>
+<li>Placeholders only work in simple cells and tables, pivot tables or
+other such things.</li>
+</ul>
+
+<h2>
+<a id="changelog" class="anchor" href="#changelog" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Changelog</h2>
+
+<h3>
+<a id="version-006" class="anchor" href="#version-006" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Version 0.0.6</h3>
+
+<p>New feature added:</p>
+
+<ul>
+<li>If statements! Pass in boolean variables to show/hide sections of sheets.</li>
+</ul>
+
+<p>Bug fix:</p>
+
+<ul>
+<li>Fix missing compression method.</li>
+</ul>
+
+<h3>
+<a id="version-005" class="anchor" href="#version-005" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Version 0.0.5</h3>
+
+<ul>
+<li>Forked from original <a href="https://github.com/kant2002/xlsx-template">xlsx-template</a> library.</li>
+</ul>
+
+<h3>
+<a id="version-004" class="anchor" href="#version-004" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Version 0.0.4</h3>
+
+<p>Merged pending pull requests</p>
+
+<ul>
+<li>Deletion of the sheets. </li>
+</ul>
+
+<h3>
+<a id="version-003" class="anchor" href="#version-003" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Version 0.0.3</h3>
+
+<p>Merged a number of overdue pull requests, including:</p>
+
+<ul>
+<li>Windows support</li>
+<li>Support for table footers</li>
+<li>Documentation improvements</li>
+</ul>
+
+<h3>
+<a id="version-002" class="anchor" href="#version-002" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Version 0.0.2</h3>
+
+<ul>
+<li>Fix a potential issue with the typing of string indices that could cause the
+first string to not render correctly if it contained a substitution.</li>
+</ul>
+
+<h3>
+<a id="version-001" class="anchor" href="#version-001" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Version 0.0.1</h3>
+
+<ul>
+<li>Initial release</li>
+</ul>
+      </section>
+    </div>
+    <footer>
+      <p>Project maintained by <a href="https://github.com/john-ro">john-ro</a></p>
+      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
+    </footer>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
