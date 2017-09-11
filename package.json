@@ -1,31 +1,24 @@
 {
-  "name": "xlsx-template",
-  "version": "0.0.5",
+  "name": "excel-workbook-template",
+  "version": "0.0.9",
   "description": "Generate .xlsx (Excel) files from templates built in Excel",
   "main": "./lib/index",
-  "author": {
-    "name": "Martin Aspeli"
-  },
+  "author": "Martin Aspeli",
   "contributors": [
-    {
-      "name": "Martin Aspeli"
-    },
-    {
-      "name": "Andrey Kurdyumov",
-      "email": "kant2002@gmail.com"
-    }
+    "Martin Aspeli",
+    "Andrey Kurdyumov <kant2002@gmail.com>"
   ],
   "repository": {
     "type": "git",
-    "url": "http://github.com/kant2002/xlsx-template.git"
+    "url": "git+https://github.com/daoyulai/xlsx-template.git"
   },
   "bugs": {
-    "url": "http://github.com/kant2002/xlsx-template/issues"
+    "url": "http://github.com/daoyulai/xlsx-template/issues"
   },
   "licenses": [
     {
       "type": "MIT",
-      "url": "http://github.com/kant2002/xlsx-template/raw/master/LICENSE"
+      "url": "http://github.com/daoyulai/xlsx-template/raw/master/LICENSE"
     }
   ],
   "dependencies": {
@@ -38,8 +31,15 @@
     "grunt-buster": "~0.4.2"
   },
   "scripts": {
-    "test": "buster-test"
+    "test": "buster-test --reporter specification"
   },
-  "readme": "",
-  "readmeFilename": "README.md"
+  "homepage": "https://github.com/daoyulai/xlsx-template#readme",
+  "directories": {
+    "test": "test"
+  },
+  "keywords": [
+    "excel",
+    "template"
+  ],
+  "license": "MIT"
 }

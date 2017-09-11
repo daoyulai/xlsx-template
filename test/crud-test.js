@@ -546,7 +546,30 @@ describe("CRUD operations", function() {
                 buster.expect(table3.find("./autoFilter").attrib.ref).toEqual("C14:D16"); // Grown and pushed down
 
                 // XXX: For debugging only
-                fs.writeFileSync('test.xlsx', newData, 'binary');
+                // fs.writeFileSync('test.xlsx', newData, 'binary');
+
+                done();
+            });
+
+        });
+
+        it("can load customized worksheet names", function(done) {
+            
+            fs.readFile(path.join(__dirname, 'templates', 'test-tabs.xlsx'), function(err, data) {
+                buster.expect(err).toBeNull();
+                var template = new XlsxTemplate(data, {
+                    "Tab-A": "Tab-Renamed-A",
+                    "Tab-B": "Tab-Renamed-B"
+                });
+                
+                var newData = template.generate();
+
+                var workbook = etree.parse(template.archive.file("xl/workbook.xml").asText()).getroot();
+
+                buster.expect(workbook.find("./sheets/sheet[@name='Tab-A']")).toBeNull();
+                buster.expect(workbook.find("./sheets/sheet[@name='Tab-Renamed-A']")).not.toBeNull();
+                buster.expect(workbook.find("./sheets/sheet[@name='Tab-B']")).toBeNull();
+                buster.expect(workbook.find("./sheets/sheet[@name='Tab-Renamed-B']")).not.toBeNull();
 
                 done();
             });

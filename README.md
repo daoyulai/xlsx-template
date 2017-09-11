@@ -1,6 +1,6 @@
-# XLSX Template
+# Excel (XLSX) Template
 
-[![Build status](https://api.travis-ci.org/kant2002/xlsx-template.png?branch=master)](http://travis-ci.org/kant2002/xlsx-template)
+[![Build status](https://api.travis-ci.org/daoyulai/xlsx-template.png?branch=in-progress)](http://travis-ci.org/daoyulai/xlsx-template)
 
 This module provides a means of generating "real" Excel reports (i.e. not CSV
 files) in NodeJS applications.
@@ -34,6 +34,22 @@ might result in (depending on date formatting in the second cell):
 
 Here, `extractDate` may be a date and the second cell may be formatted as a
 number.
+
+### If Statements
+
+Truthy variables can be passed as placeholder values to determine if rows
+show or not:
+
+    | ${if:name}    |
+    | ${name}       |
+    | ${endif:name} |
+
+If the condition is tested to be false, the 3 rows above will not show at
+all. If it is tested to be true, the first and third rows will be removed,
+but the second row resolving `${name}` will remain.
+
+If statements should only show up under the first column (A). Nesting of if
+blocks are allowed.
 
 ### Columns
 
@@ -137,7 +153,51 @@ attach it to an email or do whatever you want with it.
 * Placeholders only work in simple cells and tables, pivot tables or
   other such things.
 
+### Generate Excel File with Customized Sheet Names
+
+You can generate Excel files from template with customized sheet names. In code,
+you need to initialize the instance as:
+
+    new XlsxTemplate(data, {
+        "Sheet1": "NewSheet1",
+        "Sheet2": "NewSheet2"
+    });
+
+`Sheet1` is the original sheet name in the template file.
+`NewSheet1` is the new sheet name to replace `Sheet1`.
+
+
 ## Changelog
+
+### Version 0.0.9
+
+New feature added:
+
+* Load template with customized sheet names.
+
+### Version 0.0.8
+
+Forked from [john-ro/xlsx-template](https://github.com/john-ro/xlsx-template) library.
+
+### Version 0.0.7
+
+Bug fix:
+
+* Fix delete sheet feature when sheet number does not match id.
+
+### Version 0.0.6
+
+New feature added:
+
+* If statements! Pass in boolean variables to show/hide sections of sheets.
+
+Bug fix:
+
+* Fix missing compression method.
+
+### Version 0.0.5
+
+* Forked from original [xlsx-template](https://github.com/kant2002/xlsx-template) library.
 
 ### Version 0.0.4
 
